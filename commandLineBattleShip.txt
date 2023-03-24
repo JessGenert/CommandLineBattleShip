@@ -1,0 +1,239 @@
+public struct Ship {
+  public var size: Int
+  public var symbol: String
+  public var coordinates: [[String]]
+  init(size: Int, symbol: String, coordinates: [[String]]) {
+    self.size = size
+    self.symbol = symbol
+    self.coordinates = coordinates
+  }
+
+  // Function to set symbol coordinates in a grid at specific locations
+  public mutating func setCoordinates(row: Int, column: Int, direction: String) -> [[String]] {
+    if direction == "vertical" {
+      for i in 0..<size {
+        self.coordinates[row + i][column] = symbol
+      }
+    }
+    if direction == "horizontal" {
+      for i in 0..<size {
+        self.coordinates[row][column + i] = symbol
+      }
+    }
+    return coordinates
+  }
+}
+
+//Initialize the coordinates grid to store the values of the ship's locations
+var grid = [[String]](repeating: [String](repeating: "*", count: 11), count: 11)
+
+// Initializing Ships with appropriate size, symbol
+var aircraftcarrier = Ship(size: 4, symbol: "Ш", coordinates: grid)
+grid = aircraftcarrier.setCoordinates(row: 8, column: 5, direction: "horizontal")
+
+var submarine = Ship(size: 3, symbol: "Ө", coordinates: grid)
+grid = submarine.setCoordinates(row: 6, column: 5, direction: "horizontal")
+
+var tugboat = Ship(size: 2, symbol: "Ӝ", coordinates: grid)
+grid = tugboat.setCoordinates(row: 3, column: 1, direction: "vertical")
+grid = tugboat.setCoordinates(row: 1, column: 6, direction: "horizontal")
+grid = tugboat.setCoordinates(row: 6, column: 3, direction: "vertical")
+
+// Create a Gameboard
+public struct Gameboard {
+  public var board = [[String]](repeating: [String](repeating: "*", count: 11), count: 11)
+  public mutating func createBoard() -> [[String]] {
+    self.board[0][0] = " "
+    for i in 1...10 {
+      self.board[i][0] = String(UnicodeScalar(64 + i)!)
+      let convertedChar = UnicodeScalar(48 + i)
+      self.board[0][i] = String(convertedChar!)
+    }
+    self.board[0][10] = "10"
+    return board
+  }
+  // Create a method to display the Gameboard
+  public func displayBoard(board: [[String]]) {
+    var createdString = ""
+    for i in 0...10 {
+      createdString += board[i].joined(separator: " ") + "\n"
+    }
+    print(createdString)
+  }
+}
+
+public func checkForTugboat(startRow: Int, startColumn: Int, grid: [[String]]) -> Bool {
+
+  if grid[startRow][startColumn] == grid[startRow + 1][startColumn]
+    || grid[startRow][startColumn] == grid[startRow - 1][startColumn]
+    || grid[startRow][startColumn] == grid[startRow][startColumn + 1]
+    || grid[startRow][startColumn] == grid[startRow][startColumn - 1]
+  {
+    return true
+  }
+  return false
+}
+
+// Function to start a new game
+public func newGame() {
+  // Initialize the Gameboard
+  var Gameboard1 = Gameboard()
+  var Gameboard2: [[String]] = Gameboard1.createBoard()
+  Gameboard1.displayBoard(board: Gameboard2)
+
+  // Variable to keep track of ships that sunk
+  var shipsSunk = 0
+
+  //Variable to get the values from the 0th column so that we can get the index of the string
+  var columnArray = [String](repeating: "", count: 11)
+  for i in 0...10 {
+    columnArray[i] = Gameboard2[i][0]
+  }
+
+  // boolean to check if there are any ships left or not
+  var shipsFound = true
+
+  while shipsFound {
+    if shipsSunk == 5 {
+      shipsFound = false
+      print("Congratulations! You got all the ships.")
+
+      // Take input from user if want to play again or not
+      print("Would you like to play again? Yes/No")
+      var inputFromUser: String = readLine() ?? "nil"
+      inputFromUser = inputFromUser.uppercased()
+
+      //Checks to make sure the input for whether to play again is valid
+      while inputFromUser != "YES" && inputFromUser != "NO" {
+        print("\nInvalid entry\n")
+        print("Would you like to play again? Yes/No")
+        inputFromUser = readLine() ?? "nil"
+        inputFromUser = inputFromUser.uppercased()
+      }
+
+      if inputFromUser == "YES" {
+        // Recursive call to start a new game if user prompts "Yes"
+        newGame()
+      } else if inputFromUser == "NO" {
+        print("Thank you for playing Command Line Battleship!")
+      }
+    } else {
+
+      //Accepts the user input for the row value
+      print("Please enter a row\n")
+      var inputChar: String = readLine() ?? "nil"
+      inputChar = inputChar.uppercased()
+      print("\n")
+
+      //Checks to make sure the input for the row is withing the valid range
+      while inputChar < "A" || inputChar > "J" {
+        print("Please enter a valid character for row like A, B, etc")
+        inputChar = readLine() ?? "nil"
+        inputChar = inputChar.uppercased()
+        print("\n")
+      }
+
+      //Checks to make sure the input for the row is a single letter
+      while inputChar.count > 1 {
+        print("Please enter a valid single character for row like A, B, etc")
+        inputChar = readLine() ?? "nil"
+        inputChar = inputChar.uppercased()
+        print("\n")
+      }
+
+      //Accepts the user input for the column value
+      print("Please enter a column\n")
+      var inputNum: String = readLine() ?? "nil"
+      print("\n")
+
+      //Checks to make sure the input for the column is within the valid range
+      while Int(inputNum) ?? 0 > 10 || Int(inputNum) ?? 0 < 1 {
+        print("Invalid column number - use 1 to 10")
+        inputNum = readLine() ?? "nil"
+        print("\n")
+      }
+
+      //These next two lines get the index value of the row value and the column value that was inputted
+      var inputRow = columnArray.firstIndex(of: inputChar)
+      var inputColumn = Gameboard1.board[0].firstIndex(of: inputNum)
+
+      //Function to determine whether the coordinates given hit or miss a ship
+      func hitOrMiss(inputRow: Int, inputColumn: Int) -> Int {
+        if grid[inputRow][inputColumn] == "Ш" {
+          if Gameboard2[inputRow][inputColumn] == "Ш" {
+            Gameboard1.displayBoard(board: Gameboard2)
+            return shipsSunk
+          }
+          Gameboard2[inputRow][inputColumn] = "Ш"
+          var count = 0
+          for values in Gameboard2 {
+            for value in values {
+              if value == "Ш" {
+                count += 1
+              }
+              if count == 4 {
+                print("You sunk an air craft carrier!\n")
+                shipsSunk += 1
+                Gameboard1.displayBoard(board: Gameboard2)
+                return shipsSunk
+              }
+            }
+          }
+        } else if grid[inputRow][inputColumn] == "Ӝ" {
+          if Gameboard2[inputRow][inputColumn] == "Ӝ" {
+            Gameboard1.displayBoard(board: Gameboard2)
+            return shipsSunk
+          }
+          Gameboard2[inputRow][inputColumn] = "Ӝ"
+              if checkForTugboat(startRow: inputRow, startColumn: inputColumn, grid: grid) {
+                print("You sunk a tugboat!\n")
+                shipsSunk += 1
+                Gameboard1.displayBoard(board: Gameboard2)
+                return shipsSunk
+              }
+              if checkForTugboat(startRow: inputRow, startColumn: inputColumn, grid: grid) {
+                print("You sunk a tugboat!\n")
+                shipsSunk += 1
+                Gameboard1.displayBoard(board: Gameboard2)
+                return shipsSunk
+              }
+              if checkForTugboat(startRow: inputRow, startColumn: inputColumn, grid: grid) {
+                print("You sunk a tugboat!\n")
+                shipsSunk += 1
+                Gameboard1.displayBoard(board: Gameboard2)
+                return shipsSunk
+              }
+            }
+          }
+        } else if grid[inputRow][inputColumn] == "Ө" {
+          if Gameboard2[inputRow][inputColumn] == "Ө" {
+            Gameboard1.displayBoard(board: Gameboard2)
+            return shipsSunk
+          }
+          Gameboard2[inputRow][inputColumn] = "Ө"
+          var count = 0
+          for values in Gameboard2 {
+            for value in values {
+              if value == "Ө" {
+                count += 1
+              }
+              if count == 3 {
+                print("You sunk a submarine!\n")
+                Gameboard1.displayBoard(board: Gameboard2)
+                shipsSunk += 1
+                return shipsSunk
+              }
+            }
+          }
+        } else {
+          Gameboard2[inputRow][inputColumn] = " "
+        }
+        Gameboard1.displayBoard(board: Gameboard2)
+        return shipsSunk
+      }
+      hitOrMiss(inputRow: inputRow!, inputColumn: inputColumn!)
+    }
+  }
+}
+// Start a new game
+newGame()
